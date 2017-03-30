@@ -4,12 +4,18 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
 
+import com.google.android.things.contrib.driver.button.Button;
+import com.google.android.things.pio.Gpio;
+import com.google.android.things.pio.PeripheralManagerService;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.TimeUnit;
 
@@ -31,6 +37,10 @@ public class MainActivity extends Activity {
     private final DatabaseReference STATUS_DB_REF = database.getReference(STATUS_DB);
     private final DatabaseReference LED_DB_REF = database.getReference(LED_DB);
 
+    //THINGS
+    private final PeripheralManagerService svc = new PeripheralManagerService();
+    private final Map<String, Gpio> leds = new HashMap<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Timber.v("onCreate");
@@ -38,8 +48,32 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        findViewById(R.id.btn_green).setOnClickListener(v -> input.onNext("green"));
-        findViewById(R.id.btn_red).setOnClickListener(v -> input.onNext("red"));
+//        findViewById(R.id.btn_green).setOnClickListener(v -> input.onNext("green"));
+//        findViewById(R.id.btn_red).setOnClickListener(v -> input.onNext("red"));
+
+        //TODO to be tested
+        try {
+            final Button btnRed = new Button("BTN_RED_PIN", Button.LogicState.PRESSED_WHEN_LOW);
+            btnRed.setOnButtonEventListener((button, pressed) -> {
+                input.onNext("red");
+            });
+
+            final Button btnGreen = new Button("BTN_GREEN_PIN", Button.LogicState.PRESSED_WHEN_LOW);
+            btnRed.setOnButtonEventListener((button, pressed) -> {
+                input.onNext("green");
+            });
+
+            final Gpio redLed = svc.openGpio("LED_RED_PIN"); //FIXME
+            redLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+
+            final Gpio greenLed = svc.openGpio("LED_GREEN_PIN"); //FIXME
+            redLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+
+            leds.put("red", redLed);
+            leds.put("green", greenLed);
+        } catch (IOException e) {
+            Timber.w(e);
+        }
 
         STATUS_DB_REF.setValue("none");
         STATUS_DB_REF.addValueEventListener(new ValueEventListener() {
@@ -48,10 +82,10 @@ public class MainActivity extends Activity {
                 Timber.v("onDataChange");
                 Timber.d("snapshot: %s", snapshot);
 
-                final String status = snapshot.getValue(String.class);
-                Timber.d("status: " + status);
-
-                ((TextView) findViewById(R.id.tv_status)).setText(status);
+//                final String status = snapshot.getValue(String.class);
+//                Timber.d("status: " + status);
+//
+//                ((TextView) findViewById(R.id.tv_status)).setText(status);
             }
 
             @Override
@@ -71,24 +105,35 @@ public class MainActivity extends Activity {
                 final String color = snapshot.child("color").getValue(String.class);
                 Timber.d("color: " + color);
 
-                //FIXME with android things
-                switch (color) {
-                    case "red": {
-                        findViewById(R.id.lbl_red).setEnabled(true);
-                        findViewById(R.id.lbl_green).setEnabled(false);
-                        break;
-                    }
+                try {
+                    switch (color) {
+                        case "red": {
+//                            findViewById(R.id.lbl_red).setEnabled(true);
+//                            findViewById(R.id.lbl_green).setEnabled(false);
+                            leds.get("red").setValue(true);
+                            leds.get("green").setValue(false);
 
-                    case "green": {
-                        findViewById(R.id.lbl_red).setEnabled(false);
-                        findViewById(R.id.lbl_green).setEnabled(true);
-                        break;
-                    }
+                            break;
+                        }
 
-                    default: {
-                        findViewById(R.id.lbl_red).setEnabled(false);
-                        findViewById(R.id.lbl_green).setEnabled(false);
+                        case "green": {
+//                            findViewById(R.id.lbl_red).setEnabled(false);
+//                            findViewById(R.id.lbl_green).setEnabled(true);
+                            leds.get("red").setValue(false);
+                            leds.get("green").setValue(true);
+
+                            break;
+                        }
+
+                        default: {
+//                            findViewById(R.id.lbl_red).setEnabled(false);
+//                            findViewById(R.id.lbl_green).setEnabled(false);
+                            leds.get("red").setValue(false);
+                            leds.get("green").setValue(false);
+                        }
                     }
+                } catch (IOException e) {
+                    Timber.w(e);
                 }
             }
 

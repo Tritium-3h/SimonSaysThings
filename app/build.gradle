@@ -5,7 +5,7 @@ android {
     buildToolsVersion "25.0.2"
     defaultConfig {
         applicationId "me.nichel.simonsaysapp"
-        minSdkVersion 23
+        minSdkVersion 24
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
@@ -32,6 +32,8 @@ dependencies {
     compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
     compile 'io.reactivex.rxjava2:rxjava:2.0.1'
     compile 'com.google.firebase:firebase-database:10.0.1'
+    provided 'com.google.android.things:androidthings:0.2-devpreview'
+    compile 'com.google.android.things.contrib:driver-button:0.2'
 }
 
 apply plugin: 'com.google.gms.google-services'
