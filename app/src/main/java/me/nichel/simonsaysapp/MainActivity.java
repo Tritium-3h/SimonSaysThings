@@ -14,8 +14,11 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Stack;
 import java.util.concurrent.TimeUnit;
 
@@ -26,6 +29,16 @@ import io.reactivex.subjects.Subject;
 import timber.log.Timber;
 
 public class MainActivity extends Activity {
+    //COLOR
+    private static final Map<String, String> COLOR_MAP = new HashMap<>();
+
+    static {
+        COLOR_MAP.put("red", "0");
+        COLOR_MAP.put("green", "1");
+        COLOR_MAP.put("blue", "2");
+        COLOR_MAP.put("yellow", "3");
+    }
+
     //RX
     private final CompositeDisposable disposable = new CompositeDisposable();
     private final Subject<String> input = PublishSubject.create();
@@ -36,6 +49,7 @@ public class MainActivity extends Activity {
     private static final String LED_DB = "led";
     private final DatabaseReference STATUS_DB_REF = database.getReference(STATUS_DB);
     private final DatabaseReference LED_DB_REF = database.getReference(LED_DB);
+    private int counter = 0;
 
     //THINGS
     private final PeripheralManagerService svc = new PeripheralManagerService();
@@ -48,29 +62,48 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        findViewById(R.id.btn_green).setOnClickListener(v -> input.onNext("green"));
-//        findViewById(R.id.btn_red).setOnClickListener(v -> input.onNext("red"));
-
-        //TODO to be tested
         try {
-            final Button btnRed = new Button("BTN_RED_PIN", Button.LogicState.PRESSED_WHEN_LOW);
+            //BUTTONS
+            final Button btnRed = new Button("IO2", Button.LogicState.PRESSED_WHEN_LOW);
             btnRed.setOnButtonEventListener((button, pressed) -> {
-                input.onNext("red");
+                Timber.d("button[%s]: %s", button, pressed);
+
+                if (pressed) {
+                    input.onNext(COLOR_MAP.get("red"));
+                }
             });
 
-            final Button btnGreen = new Button("BTN_GREEN_PIN", Button.LogicState.PRESSED_WHEN_LOW);
-            btnRed.setOnButtonEventListener((button, pressed) -> {
-                input.onNext("green");
-            });
+//            final Button btnGreeb = new Button("BTN_GREEN_PIN", Button.LogicState.PRESSED_WHEN_LOW);
+//            btnGreeb.setOnButtonEventListener((button, pressed) -> {
+//                input.onNext(COLOR_MAP.get("green"));
+//            });
+//
+//            final Button btnBlue = new Button("BTN_BLUE_PIN", Button.LogicState.PRESSED_WHEN_LOW);
+//            btnBlue.setOnButtonEventListener((button, pressed) -> {
+//                input.onNext(COLOR_MAP.get("blue"));
+//            });
+//
+//            final Button btnYellow = new Button("BTN_YELLOW_PIN", Button.LogicState.PRESSED_WHEN_LOW);
+//            btnYellow.setOnButtonEventListener((button, pressed) -> {
+//                input.onNext(COLOR_MAP.get("yellow"));
+//            });
 
-            final Gpio redLed = svc.openGpio("LED_RED_PIN"); //FIXME
+            //LEDS
+            final Gpio redLed = svc.openGpio("IO4");
             redLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+            leds.put(COLOR_MAP.get("red"), redLed);
 
-            final Gpio greenLed = svc.openGpio("LED_GREEN_PIN"); //FIXME
-            redLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
-
-            leds.put("red", redLed);
-            leds.put("green", greenLed);
+//            final Gpio greenLed = svc.openGpio("IO4");
+//            greenLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+//            leds.put(COLOR_MAP.get("green"), greenLed);
+//
+//            final Gpio blueLed = svc.openGpio("LED_BLUE_PIN");
+//            blueLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+//            leds.put(COLOR_MAP.get("blue"), greenLed);
+//
+//            final Gpio yellowLed = svc.openGpio("LED_YELLOW_PIN");
+//            yellowLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+//            leds.put(COLOR_MAP.get("yellow"), greenLed);
         } catch (IOException e) {
             Timber.w(e);
         }
@@ -81,11 +114,6 @@ public class MainActivity extends Activity {
             public void onDataChange(final DataSnapshot snapshot) {
                 Timber.v("onDataChange");
                 Timber.d("snapshot: %s", snapshot);
-
-//                final String status = snapshot.getValue(String.class);
-//                Timber.d("status: " + status);
-//
-//                ((TextView) findViewById(R.id.tv_status)).setText(status);
             }
 
             @Override
@@ -95,45 +123,30 @@ public class MainActivity extends Activity {
             }
         });
 
-        LED_DB_REF.child("color").setValue("none");
+
+        LED_DB_REF.setValue(new SimonEvent("none", 0));
         LED_DB_REF.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
                 Timber.v("onDataChange");
                 Timber.d("snapshot: %s", snapshot);
 
-                final String color = snapshot.child("color").getValue(String.class);
-                Timber.d("color: " + color);
+                if (snapshot.child("counter") != null) {
+                    counter = Integer.getInteger(snapshot.child("counter").getValue(String.class), 0);
+                    Timber.d("counter: " + counter);
+                }
 
-                try {
-                    switch (color) {
-                        case "red": {
-//                            findViewById(R.id.lbl_red).setEnabled(true);
-//                            findViewById(R.id.lbl_green).setEnabled(false);
-                            leds.get("red").setValue(true);
-                            leds.get("green").setValue(false);
+                if (snapshot.child("color") != null) {
+                    final String color = snapshot.child("color").getValue(String.class);
+                    Timber.d("color: " + color);
 
-                            break;
+                    try {
+                        for (final String key : leds.keySet()) {
+                            leds.get(key).setValue(key.equals(color));
                         }
-
-                        case "green": {
-//                            findViewById(R.id.lbl_red).setEnabled(false);
-//                            findViewById(R.id.lbl_green).setEnabled(true);
-                            leds.get("red").setValue(false);
-                            leds.get("green").setValue(true);
-
-                            break;
-                        }
-
-                        default: {
-//                            findViewById(R.id.lbl_red).setEnabled(false);
-//                            findViewById(R.id.lbl_green).setEnabled(false);
-                            leds.get("red").setValue(false);
-                            leds.get("green").setValue(false);
-                        }
+                    } catch (IOException e) {
+                        Timber.w(e);
                     }
-                } catch (IOException e) {
-                    Timber.w(e);
                 }
             }
 
@@ -144,7 +157,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        startGame(10);
+        startGame(generateRandomSimon(10), 1);
     }
 
     @Override
@@ -155,71 +168,68 @@ public class MainActivity extends Activity {
         disposable.clear();
     }
 
-    private void startGame(final int level) {
-        Timber.v("startGame");
-        Timber.d("level: %d", level);
+    private Stack<String> generateRandomSimon(final int lenght) {
+        final int size = COLOR_MAP.size();
+        final String[] keys = COLOR_MAP.keySet().toArray(new String[size]);
+        final Random random = new Random();
 
         final Stack<String> simon = new Stack<>();
-        for (int i = 0; i < level; ++i) {
-            simon.add("green");
+        for (int i = 0; i < lenght; ++i) {
+            simon.add(COLOR_MAP.get(keys[random.nextInt(size)]));
         }
 
-        disposable.add(
-                Observable.fromArray(simon.toArray())
-                        .doOnSubscribe(onSubscriber -> {
-                            Timber.wtf("start level communication");
-                            STATUS_DB_REF.setValue("read");
-                        })
-                        .map(obj -> (String) obj)
-                        .flatMap(value -> Observable.just(value, "none"))
-                        .zipWith(Observable.interval(1, TimeUnit.SECONDS), (value, timer) -> value)
-                        .subscribe(
-                                value -> LED_DB_REF.child("color").setValue(value),
-                                Timber::e,
-                                () -> {
-                                    Timber.wtf("level communication completed");
+        return simon;
+    }
 
-                                    disposable.add(
-                                            input.timeout(10, TimeUnit.MINUTES) //FIXME
-                                                    .doOnSubscribe(onSubscriber -> {
-                                                        Timber.wtf("start game");
+    private void startGame(final Stack<String> simon, final int level) {
+        Timber.v("startGame");
 
-                                                        LED_DB_REF.child("color").setValue("none");
-                                                        STATUS_DB_REF.setValue("start");
-                                                    })
-                                                    .doOnNext(value -> LED_DB_REF.child("color").setValue(value))
-                                                    .flatMap(value -> {
-                                                        if (value.equals(simon.peek())) {
-                                                            return Observable.just(simon.pop());
-                                                        } else {
-                                                            return Observable.error(new Exception("wrong input"));
-                                                        }
-                                                    })
-                                                    .take(level)
-                                                    .subscribe(
-                                                            value -> {
-                                                                Timber.d("value: %s", value);
-                                                                STATUS_DB_REF.setValue("listening");
-                                                            },
-                                                            err -> {
-                                                                Timber.wtf("game over");
+        final List<String> currentSimon = simon.subList(0, level);
+        Timber.d("simon: %s", simon);
+        Timber.d("subs simon: %s", currentSimon);
 
-                                                                LED_DB_REF.child("color").setValue("none");
-                                                                STATUS_DB_REF.setValue("lose");
+        Observable.range(0, level)
+                .doOnSubscribe(onSubscriber -> {
+                    //FIXME update status?
+                })
+                .zipWith(Observable.interval(1, TimeUnit.SECONDS), (value, timer) -> value)
+                .subscribe(
+                        i -> LED_DB_REF.setValue(new SimonEvent(simon.get(i), counter + i)),
+                        Timber::e,
+                        () -> {
+                            //FIXME update status?
 
-                                                                Observable.timer(3, TimeUnit.SECONDS).subscribe(o -> this.startGame(1));
-                                                            },
-                                                            () -> {
-                                                                Timber.wtf("complete level: %d", level);
+                            input.timeout(10, TimeUnit.DAYS)
+                                    .doOnNext(value -> LED_DB_REF.child("color").setValue(value))
+                                    .flatMap(value -> {
+                                        if (value.equals(currentSimon.get(0))) {
+                                            return Observable.just(simon.remove(0));
+                                        } else {
+                                            return Observable.error(new Exception("wrong input"));
+                                        }
+                                    })
+                                    .take(level)
+                                    .subscribe(
+                                            value -> Timber.d("input: %s", value),
+                                            err -> {
+                                                Timber.d("game over");
 
-                                                                LED_DB_REF.child("color").setValue("none");
-                                                                STATUS_DB_REF.setValue("win");
+                                                STATUS_DB_REF.setValue("lose");
 
-                                                                Observable.timer(3, TimeUnit.SECONDS).subscribe(o -> this.startGame(level + 1));
-                                                            })
-                                    );
-                                }
-                        )
-        );
+                                                Observable.timer(3, TimeUnit.SECONDS).subscribe(o -> {
+                                                    final Stack<String> newSimon = generateRandomSimon(10);
+                                                    this.startGame(newSimon, 1);
+                                                });
+                                            },
+                                            () -> {
+                                                Timber.d("level %d completed", level);
+
+                                                STATUS_DB_REF.setValue("win");
+
+                                                Observable.timer(3, TimeUnit.SECONDS).subscribe(o -> this.startGame(simon, 2));
+                                            });
+                        }
+                );
+
     }
 }
