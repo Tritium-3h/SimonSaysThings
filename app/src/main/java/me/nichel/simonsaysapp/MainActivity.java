@@ -33,11 +33,33 @@ public class MainActivity extends Activity {
     private static final Map<String, String> COLOR_MAP = new HashMap<>();
 
     static {
-        COLOR_MAP.put("red", "0");
-        COLOR_MAP.put("green", "1");
-        COLOR_MAP.put("blue", "2");
-        COLOR_MAP.put("yellow", "3");
+        COLOR_MAP.put("blue", "0");
+        COLOR_MAP.put("red", "1");
+        COLOR_MAP.put("yellow", "2");
+        COLOR_MAP.put("green", "3");
     }
+
+    // RASPBERRY
+    private static final String BTN_PIN_BLUE = "BCM21";
+    private static final String BTN_PIN_RED = "BCM26";
+    private static final String BTN_PIN_YELLOW = "BCM16";
+    private static final String BTN_PIN_GREEN = "BCM6";
+
+    private static final String LED_PIN_BLUE = "BCM20";
+    private static final String LED_PIN_RED = "BCM19";
+    private static final String LED_PIN_YELLOW = "BCM12";
+    private static final String LED_PIN_GREEN = "BCM5";
+
+    // EDISON
+//    private static final String BTN_PIN_BLUE = "IO2";
+//    private static final String BTN_PIN_RED = "IO4";
+//    private static final String BTN_PIN_YELLOW = "IO6";
+//    private static final String BTN_PIN_GREEN = "IO8";
+//
+//    private static final String LED_PIN_BLUE = "IO3";
+//    private static final String LED_PIN_RED = "IO5";
+//    private static final String LED_PIN_YELLOW = "IO7";
+//    private static final String LED_PIN_GREEN = "IO9";
 
     //RX
     private final CompositeDisposable disposable = new CompositeDisposable();
