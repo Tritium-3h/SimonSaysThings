@@ -77,12 +77,12 @@ public class MainActivity extends Activity {
 //            btnGreeb.setOnButtonEventListener((button, pressed) -> {
 //                input.onNext(COLOR_MAP.get("green"));
 //            });
-//
+
 //            final Button btnBlue = new Button("BTN_BLUE_PIN", Button.LogicState.PRESSED_WHEN_LOW);
 //            btnBlue.setOnButtonEventListener((button, pressed) -> {
 //                input.onNext(COLOR_MAP.get("blue"));
 //            });
-//
+
 //            final Button btnYellow = new Button("BTN_YELLOW_PIN", Button.LogicState.PRESSED_WHEN_LOW);
 //            btnYellow.setOnButtonEventListener((button, pressed) -> {
 //                input.onNext(COLOR_MAP.get("yellow"));
@@ -96,11 +96,11 @@ public class MainActivity extends Activity {
 //            final Gpio greenLed = svc.openGpio("IO4");
 //            greenLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
 //            leds.put(COLOR_MAP.get("green"), greenLed);
-//
+
 //            final Gpio blueLed = svc.openGpio("LED_BLUE_PIN");
 //            blueLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
 //            leds.put(COLOR_MAP.get("blue"), greenLed);
-//
+
 //            final Gpio yellowLed = svc.openGpio("LED_YELLOW_PIN");
 //            yellowLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
 //            leds.put(COLOR_MAP.get("yellow"), greenLed);
@@ -168,13 +168,13 @@ public class MainActivity extends Activity {
         disposable.clear();
     }
 
-    private Stack<String> generateRandomSimon(final int lenght) {
+    private Stack<String> generateRandomSimon(final int length) {
         final int size = COLOR_MAP.size();
         final String[] keys = COLOR_MAP.keySet().toArray(new String[size]);
         final Random random = new Random();
 
         final Stack<String> simon = new Stack<>();
-        for (int i = 0; i < lenght; ++i) {
+        for (int i = 0; i < length; ++i) {
             simon.add(COLOR_MAP.get(keys[random.nextInt(size)]));
         }
 
@@ -194,7 +194,7 @@ public class MainActivity extends Activity {
                 })
                 .zipWith(Observable.interval(1, TimeUnit.SECONDS), (value, timer) -> value)
                 .subscribe(
-                        i -> LED_DB_REF.setValue(new SimonEvent(simon.get(i), counter + i)),
+                        i -> LED_DB_REF.setValue(new SimonEvent(currentSimon.get(i), counter + i)),
                         Timber::e,
                         () -> {
                             //FIXME update status?
@@ -203,7 +203,7 @@ public class MainActivity extends Activity {
                                     .doOnNext(value -> LED_DB_REF.child("color").setValue(value))
                                     .flatMap(value -> {
                                         if (value.equals(currentSimon.get(0))) {
-                                            return Observable.just(simon.remove(0));
+                                            return Observable.just(currentSimon.remove(0));
                                         } else {
                                             return Observable.error(new Exception("wrong input"));
                                         }
@@ -226,7 +226,11 @@ public class MainActivity extends Activity {
 
                                                 STATUS_DB_REF.setValue("win");
 
-                                                Observable.timer(3, TimeUnit.SECONDS).subscribe(o -> this.startGame(simon, 2));
+                                                if (simon.size() < level+1) {
+                                                    Observable.timer(3, TimeUnit.SECONDS).subscribe(o -> this.startGame(simon, level+1));
+                                                } else {
+                                                    Observable.timer(3, TimeUnit.SECONDS).subscribe(o -> this.startGame(generateRandomSimon(10), 1));
+                                                }
                                             });
                         }
                 );
