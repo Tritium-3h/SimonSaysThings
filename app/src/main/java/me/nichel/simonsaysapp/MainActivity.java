@@ -120,27 +120,29 @@ public class MainActivity extends Activity {
             });
 
             //LEDS
+            final Gpio blueLed = svc.openGpio(LED_PIN_BLUE);
+            blueLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+            leds.put(COLOR_MAP.get("blue"), blueLed);
+
             final Gpio redLed = svc.openGpio(LED_PIN_RED);
             redLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
             leds.put(COLOR_MAP.get("red"), redLed);
+
+            final Gpio yellowLed = svc.openGpio(LED_PIN_YELLOW);
+            yellowLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+            leds.put(COLOR_MAP.get("yellow"), yellowLed);
 
             final Gpio greenLed = svc.openGpio(LED_PIN_GREEN);
             greenLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
             leds.put(COLOR_MAP.get("green"), greenLed);
 
-            final Gpio blueLed = svc.openGpio(LED_PIN_BLUE);
-            blueLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
-            leds.put(COLOR_MAP.get("blue"), greenLed);
 
-            final Gpio yellowLed = svc.openGpio(LED_PIN_YELLOW);
-            yellowLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
-            leds.put(COLOR_MAP.get("yellow"), greenLed);
         } catch (IOException e) {
             Timber.d("BUTTONS/LEDS exception");
             Timber.e(e);
         }
 
-        STATUS_DB_REF.setValue("none");
+        STATUS_DB_REF.setValue("start");
         STATUS_DB_REF.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
@@ -156,7 +158,7 @@ public class MainActivity extends Activity {
         });
 
 
-        LED_DB_REF.setValue(new SimonEvent("none", 0));
+        //LED_DB_REF.setValue(new SimonEvent("none", 0));
         LED_DB_REF.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
