@@ -40,26 +40,26 @@ public class MainActivity extends Activity {
     }
 
     // RASPBERRY
-    private static final String BTN_PIN_BLUE = "BCM21";
-    private static final String BTN_PIN_RED = "BCM26";
-    private static final String BTN_PIN_YELLOW = "BCM16";
-    private static final String BTN_PIN_GREEN = "BCM6";
-
-    private static final String LED_PIN_BLUE = "BCM20";
-    private static final String LED_PIN_RED = "BCM19";
-    private static final String LED_PIN_YELLOW = "BCM12";
-    private static final String LED_PIN_GREEN = "BCM5";
+//    private static final String BTN_PIN_BLUE = "BCM21";
+//    private static final String BTN_PIN_RED = "BCM26";
+//    private static final String BTN_PIN_YELLOW = "BCM16";
+//    private static final String BTN_PIN_GREEN = "BCM6";
+//
+//    private static final String LED_PIN_BLUE = "BCM20";
+//    private static final String LED_PIN_RED = "BCM19";
+//    private static final String LED_PIN_YELLOW = "BCM12";
+//    private static final String LED_PIN_GREEN = "BCM5";
 
     // EDISON
-//    private static final String BTN_PIN_BLUE = "IO2";
-//    private static final String BTN_PIN_RED = "IO4";
-//    private static final String BTN_PIN_YELLOW = "IO6";
-//    private static final String BTN_PIN_GREEN = "IO8";
-//
-//    private static final String LED_PIN_BLUE = "IO3";
-//    private static final String LED_PIN_RED = "IO5";
-//    private static final String LED_PIN_YELLOW = "IO7";
-//    private static final String LED_PIN_GREEN = "IO9";
+    private static final String BTN_PIN_BLUE = "IO2";
+    private static final String BTN_PIN_RED = "IO4";
+    private static final String BTN_PIN_YELLOW = "IO6";
+    private static final String BTN_PIN_GREEN = "IO8";
+
+    private static final String LED_PIN_BLUE = "IO3";
+    private static final String LED_PIN_RED = "IO5";
+    private static final String LED_PIN_YELLOW = "IO7";
+    private static final String LED_PIN_GREEN = "IO9";
 
     //RX
     private final CompositeDisposable disposable = new CompositeDisposable();
@@ -86,7 +86,7 @@ public class MainActivity extends Activity {
 
         try {
             //BUTTONS
-            final Button btnRed = new Button("IO2", Button.LogicState.PRESSED_WHEN_LOW);
+            final Button btnRed = new Button(BTN_PIN_RED, Button.LogicState.PRESSED_WHEN_LOW);
             btnRed.setOnButtonEventListener((button, pressed) -> {
                 Timber.d("button[%s]: %s", button, pressed);
 
@@ -95,52 +95,62 @@ public class MainActivity extends Activity {
                 }
             });
 
-//            final Button btnGreeb = new Button("BTN_GREEN_PIN", Button.LogicState.PRESSED_WHEN_LOW);
-//            btnGreeb.setOnButtonEventListener((button, pressed) -> {
-//                input.onNext(COLOR_MAP.get("green"));
-//            });
+            final Button btnGreen = new Button(BTN_PIN_GREEN, Button.LogicState.PRESSED_WHEN_LOW);
+            btnGreen.setOnButtonEventListener((button, pressed) -> {
+                Timber.d("button[%s]: %s", button, pressed);
+                if (pressed) {
+                    input.onNext(COLOR_MAP.get("green"));
+                }
+            });
 
-//            final Button btnBlue = new Button("BTN_BLUE_PIN", Button.LogicState.PRESSED_WHEN_LOW);
-//            btnBlue.setOnButtonEventListener((button, pressed) -> {
-//                input.onNext(COLOR_MAP.get("blue"));
-//            });
+            final Button btnBlue = new Button(BTN_PIN_BLUE, Button.LogicState.PRESSED_WHEN_LOW);
+            btnBlue.setOnButtonEventListener((button, pressed) -> {
+                Timber.d("button[%s]: %s", button, pressed);
+                if (pressed) {
+                    input.onNext(COLOR_MAP.get("blue"));
+                }
+            });
 
-//            final Button btnYellow = new Button("BTN_YELLOW_PIN", Button.LogicState.PRESSED_WHEN_LOW);
-//            btnYellow.setOnButtonEventListener((button, pressed) -> {
-//                input.onNext(COLOR_MAP.get("yellow"));
-//            });
+            final Button btnYellow = new Button(BTN_PIN_YELLOW, Button.LogicState.PRESSED_WHEN_LOW);
+            btnYellow.setOnButtonEventListener((button, pressed) -> {
+                Timber.d("button[%s]: %s", button, pressed);
+                if (pressed) {
+                    input.onNext(COLOR_MAP.get("yellow"));
+                }
+            });
 
             //LEDS
-            final Gpio redLed = svc.openGpio("IO4");
+            final Gpio redLed = svc.openGpio(LED_PIN_RED);
             redLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
             leds.put(COLOR_MAP.get("red"), redLed);
 
-//            final Gpio greenLed = svc.openGpio("IO4");
-//            greenLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
-//            leds.put(COLOR_MAP.get("green"), greenLed);
+            final Gpio greenLed = svc.openGpio(LED_PIN_GREEN);
+            greenLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+            leds.put(COLOR_MAP.get("green"), greenLed);
 
-//            final Gpio blueLed = svc.openGpio("LED_BLUE_PIN");
-//            blueLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
-//            leds.put(COLOR_MAP.get("blue"), greenLed);
+            final Gpio blueLed = svc.openGpio(LED_PIN_BLUE);
+            blueLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+            leds.put(COLOR_MAP.get("blue"), greenLed);
 
-//            final Gpio yellowLed = svc.openGpio("LED_YELLOW_PIN");
-//            yellowLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
-//            leds.put(COLOR_MAP.get("yellow"), greenLed);
+            final Gpio yellowLed = svc.openGpio(LED_PIN_YELLOW);
+            yellowLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+            leds.put(COLOR_MAP.get("yellow"), greenLed);
         } catch (IOException e) {
-            Timber.w(e);
+            Timber.d("BUTTONS/LEDS exception");
+            Timber.e(e);
         }
 
         STATUS_DB_REF.setValue("none");
         STATUS_DB_REF.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
-                Timber.v("onDataChange");
+                Timber.v("Status: onDataChange");
                 Timber.d("snapshot: %s", snapshot);
             }
 
             @Override
             public void onCancelled(final DatabaseError error) {
-                Timber.v("onCancelled");
+                Timber.v("Status: onCancelled");
                 Timber.d("error: %s", error);
             }
         });
@@ -150,7 +160,7 @@ public class MainActivity extends Activity {
         LED_DB_REF.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
-                Timber.v("onDataChange");
+                Timber.v("LED: onDataChange");
                 Timber.d("snapshot: %s", snapshot);
 
                 if (snapshot.child("counter") != null) {
@@ -174,7 +184,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onCancelled(final DatabaseError error) {
-                Timber.v("onCancelled");
+                Timber.v("LED: onCancelled");
                 Timber.d("error: %s", error);
             }
         });
