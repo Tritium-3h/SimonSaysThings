@@ -69,13 +69,16 @@ public class MainActivity extends Activity {
     private final FirebaseDatabase database = FirebaseDatabase.getInstance();
     private static final String STATUS_DB = "status";
     private static final String LED_DB = "led";
+    private static final String KEY_DB = "key";
     private final DatabaseReference STATUS_DB_REF = database.getReference(STATUS_DB);
     private final DatabaseReference LED_DB_REF = database.getReference(LED_DB);
+    private final DatabaseReference KEY_DB_REF = database.getReference(KEY_DB);
     private int counter = 0;
 
     //THINGS
     private final PeripheralManagerService svc = new PeripheralManagerService();
     private final Map<String, Gpio> leds = new HashMap<>();
+    private final Map<String, Button> buttons = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,6 +87,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Initialize Buttons and Leds
         try {
             //BUTTONS
             final Button btnRed = new Button(BTN_PIN_RED, Button.LogicState.PRESSED_WHEN_LOW);
@@ -94,6 +98,7 @@ public class MainActivity extends Activity {
                     input.onNext(COLOR_MAP.get("red"));
                 }
             });
+            buttons.put(COLOR_MAP.get("red"), btnRed);
 
             final Button btnGreen = new Button(BTN_PIN_GREEN, Button.LogicState.PRESSED_WHEN_LOW);
             btnGreen.setOnButtonEventListener((button, pressed) -> {
@@ -102,6 +107,7 @@ public class MainActivity extends Activity {
                     input.onNext(COLOR_MAP.get("green"));
                 }
             });
+            buttons.put(COLOR_MAP.get("green"), btnGreen);
 
             final Button btnBlue = new Button(BTN_PIN_BLUE, Button.LogicState.PRESSED_WHEN_LOW);
             btnBlue.setOnButtonEventListener((button, pressed) -> {
@@ -110,6 +116,7 @@ public class MainActivity extends Activity {
                     input.onNext(COLOR_MAP.get("blue"));
                 }
             });
+            buttons.put(COLOR_MAP.get("blue"), btnBlue);
 
             final Button btnYellow = new Button(BTN_PIN_YELLOW, Button.LogicState.PRESSED_WHEN_LOW);
             btnYellow.setOnButtonEventListener((button, pressed) -> {
@@ -118,6 +125,7 @@ public class MainActivity extends Activity {
                     input.onNext(COLOR_MAP.get("yellow"));
                 }
             });
+            buttons.put(COLOR_MAP.get("yellow"), btnYellow);
 
             //LEDS
             final Gpio blueLed = svc.openGpio(LED_PIN_BLUE);
@@ -142,6 +150,39 @@ public class MainActivity extends Activity {
             Timber.e(e);
         }
 
+        // Configure Firebase callbacks
+        // BUTTONS
+        KEY_DB_REF.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(final DataSnapshot snapshot) {
+                Timber.v("KEY: onDataChange");
+                Timber.d("snapshot: %s", snapshot);
+
+                if (snapshot.child("counter") != null) {
+                    counter = Integer.getInteger(snapshot.child("counter").getValue(String.class), 0);
+                    Timber.d("counter: " + counter);
+                }
+
+                if (snapshot.child("color") != null) {
+                    final String color = snapshot.child("color").getValue(String.class);
+                    Timber.d("color: " + color);
+
+
+                    for (final String key : buttons.keySet()) {
+                        // TODO trigger key event
+                    }
+
+                }
+            }
+
+            @Override
+            public void onCancelled(final DatabaseError error) {
+                Timber.v("LED: onCancelled");
+                Timber.d("error: %s", error);
+            }
+        });
+
+        //STATUS
         STATUS_DB_REF.setValue("start");
         STATUS_DB_REF.addValueEventListener(new ValueEventListener() {
             @Override
@@ -157,8 +198,7 @@ public class MainActivity extends Activity {
             }
         });
 
-
-        //LED_DB_REF.setValue(new SimonEvent("none", 0));
+        // LEDS
         LED_DB_REF.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
