@@ -47,8 +47,10 @@ public class MainActivity extends Activity {
     private final FirebaseDatabase database = FirebaseDatabase.getInstance();
     private static final String STATUS_DB = "status";
     private static final String LED_DB = "led";
+    private static final String BUTTON_DB = "key";
     private final DatabaseReference STATUS_DB_REF = database.getReference(STATUS_DB);
     private final DatabaseReference LED_DB_REF = database.getReference(LED_DB);
+    private final DatabaseReference BUTTON_DB_REF = database.getReference(BUTTON_DB);
     private int counter = 0;
 
     //THINGS
@@ -156,6 +158,29 @@ public class MainActivity extends Activity {
                 Timber.d("error: %s", error);
             }
         });
+
+        BUTTON_DB_REF.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(final DataSnapshot snapshot) {
+                Timber.v("onDataChange");
+                Timber.d("snapshot: %s", snapshot);
+
+                if (snapshot.child("color") != null) {
+                    final String color = snapshot.child("color").getValue(String.class);
+                    Timber.d("color: " + color);
+
+                    input.onNext(COLOR_MAP.get(color));
+                }
+            }
+
+            @Override
+            public void onCancelled(final DatabaseError error) {
+                Timber.v("onCancelled");
+                Timber.d("error: %s", error);
+            }
+        });
+
+
 
         startGame(generateRandomSimon(10), 1);
     }
